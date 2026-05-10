@@ -82,12 +82,6 @@ impl From<std::io::Error> for AppError {
     }
 }
 
-impl From<pyo3::PyErr> for AppError {
-    fn from(err: pyo3::PyErr) -> Self {
-        AppError::PythonError(err.to_string())
-    }
-}
-
 impl From<serde_json::Error> for AppError {
     fn from(err: serde_json::Error) -> Self {
         AppError::ValidationError(err.to_string())

@@ -5,19 +5,16 @@ use std::sync::Arc;
 mod api;
 mod config;
 mod error;
-mod python_bridge;
 mod services;
 
 use crate::config::AppConfig;
-use crate::services::{ModelService, TTSService, TrainingService, AnnotationService, EmotionService};
+use crate::services::{ModelService, EmotionService};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     
     let config = AppConfig::from_env();
-    
-    pyo3::prepare_freethreaded_python();
     
     std::fs::create_dir_all(&config.models_dir)?;
     std::fs::create_dir_all(&config.output_dir)?;
@@ -26,27 +23,6 @@ async fn main() -> std::io::Result<()> {
 
     let model_service = Arc::new(ModelService::new(&config.models_dir));
     let emotion_service = Arc::new(EmotionService::new(&config.data_dir));
-    
-    let tts_config = config.tts_config.clone();
-    let tts_service = Arc::new(TTSService::new(tts_config));
-    let tts_service_clone = tts_service.clone();
-    
-    tokio::spawn(async move {
-        if let Err(e) = tts_service_clone.initialize_bridge().await {
-            log::error!("Failed to initialize TTS bridge: {}", e);
-        }
-    });
-    
-    let training_service = Arc::new(TrainingService::new(&config.training_dir));
-    
-    let annotation_service = Arc::new(AnnotationService::new(&config.data_dir));
-    let annotation_service_clone = annotation_service.clone();
-    
-    tokio::spawn(async move {
-        if let Err(e) = annotation_service_clone.initialize_bridge().await {
-            log::error!("Failed to initialize annotation bridge: {}", e);
-        }
-    });
 
     let server_addr = config.server_addr();
     println!("AI TTS Backend Server starting on http://{}", server_addr);
@@ -63,9 +39,6 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(middleware::Logger::default())
             .app_data(web::Data::new(model_service.clone()))
-            .app_data(web::Data::new(tts_service.clone()))
-            .app_data(web::Data::new(training_service.clone()))
-            .app_data(web::Data::new(annotation_service.clone()))
             .app_data(web::Data::new(emotion_service.clone()))
             .app_data(web::Data::new(config.clone()))
             .configure(api::routes::configure)
