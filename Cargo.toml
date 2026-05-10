@@ -1,0 +1,31 @@
+[package]
+name = "ai-tts-server"
+version = "0.1.0"
+edition = "2021"
+authors = ["AI TTS Team"]
+description = "AI Text-to-Speech Backend Server"
+
+[dependencies]
+actix-web = "4"
+actix-rt = "2"
+actix-cors = "0.7"
+actix-multipart = "0.6"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+pyo3 = { version = "0.20", features = ["auto-initialize"] }
+futures = "0.3"
+bytes = "1"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+log = "0.4"
+env_logger = "0.11"
+thiserror = "1"
+anyhow = "1"
+lru = "0.12"
+hound = "3"
+warp = "0.3"
+
+[profile.release]
+opt-level = 3
+lto = true
